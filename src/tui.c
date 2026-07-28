@@ -224,7 +224,7 @@ void set_license(WINDOW *win, GimbapConfig *config) {
             case KEY_DOWN:
                 choice = (choice + 1) % n_licenses;
                 break;
-            case 10: // ENTER 키
+            case 10:
                 config->license = choice + 1; // (1: None, 2: MIT, ...)
                 return;
             case 'q':
