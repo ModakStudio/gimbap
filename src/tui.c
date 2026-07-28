@@ -7,13 +7,17 @@
 
 typedef struct {
     char name[50];
-    int lang;  // 1: Rust, 2: Go, 3: Python, 4: NPM
+    int lang;  // 1: rust, 2: go, 3: python, 4: npm 5: empty
     bool remote; //github remote t/f
     int license; // 0: None, 1: MIT, 2: Apache, 3: GPL
     bool readme; // readme.md t/f
 }GimbapConfig;
 
+const char* lang_name[] = {"empty", "rust", "go", "python", "npm"};
+const char* license_name[] = {"None", "MIT License", "Apache License 2.0", "GPL v3"};
+
 int width = 60;
+
 
 void draw_logo(WINDOW *win);
 void get_name(WINDOW *win, GimbapConfig *config);
@@ -21,10 +25,11 @@ void select_lang(WINDOW *win, GimbapConfig *config);
 void set_options(WINDOW *win, GimbapConfig *config);
 void set_license(WINDOW *win, GimbapConfig *config);
 void set_readme(WINDOW *win, GimbapConfig *config);
+void print_summary(GimbapConfig *config);
 
 int main() {
     setlocale(LC_ALL, ""); 
-    GimbapConfig config = {"", 0, false, 0, true};
+    GimbapConfig config = {"", 0, false, 0, false};
 
     initscr();
     cbreak();
@@ -46,14 +51,7 @@ int main() {
 
     endwin();
 
-    printf("=== Gimbap Configuration Result ===\n");
-    printf("Project Name : %s\n", config.name);
-    printf("Language ID  : %d\n", config.lang);
-    printf("Git Remote   : %s\n", config.remote ? "Yes" : "No");
-    printf("License ID   : %d\n", config.license);
-    printf("Add README   : %s\n", config.readme ? "Yes" : "No");
-    printf("==================================\n");
-
+    print_summary(&config);
     return 0;
 }
 
@@ -65,7 +63,7 @@ void draw_logo(WINDOW *win){
     mvwprintw(win, 4, 11, "█▀ ██   ██   █ █ █  ████▀  █▀▀▀█  ████▀");
     mvwprintw(win, 5, 11, "█▄▄▄█  ▄██▄  █   █  █▄▄▄█  █   █  █");
     mvwprintw(win, 7, 15, "- INTEGRATED PROJECT MANAGER -");
-    mvwprintw(win, 8, 18, "v1.0.0 (Debian Package)");
+    mvwprintw(win, 8, 18, "v0.0.1 (Debian Package)");
     mvwhline(win, 10, 1, ACS_HLINE, width - 2);
     mvwprintw(win, 12, 16, "[ Press any key to start ]");
     wrefresh(win);
@@ -96,8 +94,7 @@ void select_lang(WINDOW *win, GimbapConfig *config) {
     if (config->lang != 0) return; // if language is already selected, skip input
 
     int choice = 0;
-    char *langs[] = {"Rust", "Go", "Python", "NPM"};
-    int n_langs = sizeof(langs) / sizeof(char *);
+    int n_langs = sizeof(lang_name) / sizeof(char *);
     int ch;
 
     keypad(win, TRUE);
@@ -112,10 +109,10 @@ void select_lang(WINDOW *win, GimbapConfig *config) {
         for (int i = 0; i < n_langs; i++) {
             if (i == choice) {
                 wattron(win, A_REVERSE);
-                mvwprintw(win, 4 + i, 4, " > [ ] %-10s ", langs[i]);
+                mvwprintw(win, 4 + i, 4, " > [ ] %-10s ", lang_name[i]);
                 wattroff(win, A_REVERSE);
             } else {
-                mvwprintw(win, 4 + i, 4, "   [ ] %-10s ", langs[i]);
+                mvwprintw(win, 4 + i, 4, "   [ ] %-10s ", lang_name[i]);
             }
         }
 
@@ -131,8 +128,8 @@ void select_lang(WINDOW *win, GimbapConfig *config) {
             case KEY_DOWN:
                 choice = (choice + 1) % n_langs;
                 break;
-            case 10: // ENTER (ASCII 10)
-                config->lang = choice + 1; // (1: Rust, 2: Go...)
+            case 10:
+                config->lang = choice;
                 return;
             case 'q':
                 return;
@@ -144,7 +141,7 @@ void select_lang(WINDOW *win, GimbapConfig *config) {
 void set_options(WINDOW *win, GimbapConfig *config) {
     if (config->remote) return;
 
-    int choice = 0; // 0: No, 1: Yes
+    int choice = 1; // 0: No, 1: Yes
     int ch;
 
     keypad(win, TRUE);
@@ -153,15 +150,17 @@ void set_options(WINDOW *win, GimbapConfig *config) {
         wclear(win);
         box(win, 0, 0);
         mvwprintw(win, 0, 19, " [ GitHub Remote ] ");
-        if (choice == 0) {
+        mvwprintw(win, 2, 4, "Do you want to create or connect");
+        mvwprintw(win, 3, 4, "a remote repository on GitHub?");
+        if (choice == 1) {
                 wattron(win, A_REVERSE);
-                mvwprintw(win, 4, 6, " (*) No, Local only ");
+                mvwprintw(win, 6, 6, " (*) Yes, Create or Connect Remote Repository ");
                 wattroff(win, A_REVERSE);
-                mvwprintw(win, 5, 6, " ( ) Yes, Create or Connect Remote Repository ");
+                mvwprintw(win, 7, 6, " ( ) No, Local only ");
             } else {
-                mvwprintw(win, 4, 6, " ( ) No, Local only ");
+                mvwprintw(win, 6, 6, " ( ) Yes, Create or Connect Remote Repository ");
                 wattron(win, A_REVERSE);
-                mvwprintw(win, 5, 6, " (*) Yes, Create or Connect Remote Repository ");
+                mvwprintw(win, 7, 6, " (*) No, Local only ");
                 wattroff(win, A_REVERSE);
             }
             mvwhline(win, 11, 1, ACS_HLINE, width - 2);
@@ -186,13 +185,8 @@ void set_options(WINDOW *win, GimbapConfig *config) {
 //step4: select the license
 void set_license(WINDOW *win, GimbapConfig *config) {
     if (config->license != 0) return; // if license is already selected, skip input
-    char *licenses[] = {
-        "None",
-        "MIT License",
-        "Apache License 2.0",
-        "GPL v3"
-    };
-    int n_licenses = sizeof(licenses) / sizeof(char *);
+
+    int n_licenses = sizeof(license_name) / sizeof(char *);
     int choice = 0;
     int ch;
 
@@ -206,10 +200,10 @@ void set_license(WINDOW *win, GimbapConfig *config) {
         for (int i = 0; i < n_licenses; i++) {
             if (i == choice) {
                 wattron(win, A_REVERSE);
-                mvwprintw(win, 4 + i, 4, " > [ ] %-20s ", licenses[i]);
+                mvwprintw(win, 4 + i, 4, " > [ ] %-20s ", license_name[i]);
                 wattroff(win, A_REVERSE);
             } else {
-                mvwprintw(win, 4 + i, 4, "   [ ] %-20s ", licenses[i]);
+                mvwprintw(win, 4 + i, 4, "   [ ] %-20s ", license_name[i]);
             }
         }
         mvwhline(win, 11, 1, ACS_HLINE, width - 2);
@@ -246,21 +240,23 @@ void set_readme(WINDOW *win, GimbapConfig *config) {
         wclear(win);
         box(win, 0, 0);
         mvwprintw(win, 0, (width - 13) / 2, " [ README.md ] ");
-        mvwprintw(win, 2, 4, "Do you want to create a README.md template for your project?");
+        mvwprintw(win, 2, 4, "Do you want to create a README.md");
+        mvwprintw(win, 3, 4, "template for your project?");
 
         if (choice == 0) {
             wattron(win, A_REVERSE);
-            mvwprintw(win, 4, 6, " > [X] Yes, create a template ");
+            mvwprintw(win, 5, 6, " > [X] Yes, create a template ");
             wattroff(win, A_REVERSE);
-            mvwprintw(win, 5, 6, "   [ ] No ");
+            mvwprintw(win, 6, 6, "   [ ] No ");
         } else {
-            mvwprintw(win, 4, 6, "   [X] Yes, create a template ");
+            mvwprintw(win, 5, 6, "   [ ] Yes, create a template ");
             wattron(win, A_REVERSE);
-            mvwprintw(win, 5, 6, " > [ ] No ");
+            mvwprintw(win, 6, 6, " > [X] No ");
             wattroff(win, A_REVERSE);
         }
 
-        mvwprintw(win, 7, 6, "* A basic template including project description and usage instructions will be created.");
+        mvwprintw(win, 8, 6, "* A basic template including project ");
+        mvwprintw(win, 7, 6, "description and usage instructions will be created.");
         mvwhline(win, 11, 1, ACS_HLINE, width - 2);
         mvwprintw(win, 12, 2, " [↑/↓] Move   [Enter] Finish   [q] Quit ");
         wrefresh(win);
@@ -279,4 +275,28 @@ void set_readme(WINDOW *win, GimbapConfig *config) {
                 return;
         }
     }
+}
+
+void print_summary(GimbapConfig *config) {
+    int total_width = 60;
+    char title_text[100];
+    
+    sprintf(title_text, " %s Configuration ", config->name);
+    
+    int text_len = strlen(title_text);
+    int side_padding = (total_width - text_len) / 2;
+
+    for (int i = 0; i < side_padding; i++) printf("=");
+    if (text_len % 2 != 0) printf("=");
+    printf("%s", title_text);
+    for (int i = 0; i <  side_padding; i++) printf("=");
+    printf("\n");
+
+    printf("Language     : %s\n", lang_name[config->lang]);
+    printf("Git Remote   : %s\n", config->remote ? "Yes" : "No");
+    printf("License      : %s\n", license_name[config->license]);
+    printf("Add README   : %s\n", config->readme ? "Yes" : "No");
+
+    for (int i = 0; i < total_width; i++) printf("=");
+    printf("\n");
 }
