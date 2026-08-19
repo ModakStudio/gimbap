@@ -4,16 +4,10 @@
 #include <stdlib.h>
 #include <stdbool.h>
 #include <locale.h>
+#include "config.h"
+#include "tui.h"
 
 #define Enter 10
-
-typedef struct {
-    char name[50];
-    int lang;       // 1: rust, 2: go, 3: python, 4: npm 5: empty
-    bool remote;    //github remote t/f
-    int license;    // 0: None, 1: MIT, 2: Apache, 3: GPL
-    bool readme;    // readme.md t/f
-} GimbapConfig;
 
 const char* lang_name[] = {"empty", "rust", "go", "python", "npm"};
 const char* license_name[] = {"None", "MIT License", "Apache License 2.0", "GPL v3"};
@@ -29,9 +23,10 @@ void set_license(WINDOW *win, GimbapConfig *config);
 void set_readme(WINDOW *win, GimbapConfig *config);
 void print_summary(GimbapConfig *config);
 
-int main() {
+
+
+void tui_run(GimbapConfig *config) {
     setlocale(LC_ALL, ""); 
-    GimbapConfig config = {"", 0, false, 0, false};
 
     initscr();
     cbreak();
@@ -45,16 +40,15 @@ int main() {
     keypad(win, TRUE);
 
     draw_logo(win);
-    get_name(win, &config);
-    select_lang(win, &config);
-    set_options(win, &config);
-    set_license(win, &config);
-    set_readme(win, &config);
+    get_name(win, config);
+    select_lang(win, config);
+    set_options(win, config);
+    set_license(win, config);
+    set_readme(win, config);
 
     endwin();
 
-    print_summary(&config);
-    return 0;
+    print_summary(config);
 }
 
 void draw_logo(WINDOW *win){
