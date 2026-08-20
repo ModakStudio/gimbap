@@ -4,14 +4,10 @@
 #include <stdlib.h>
 #include <stdbool.h>
 #include <locale.h>
+#include "config.h"
+#include "tui.h"
 
-typedef struct {
-    char name[50];
-    int lang;  // 1: rust, 2: go, 3: python, 4: npm 5: empty
-    bool remote; //github remote t/f
-    int license; // 0: None, 1: MIT, 2: Apache, 3: GPL
-    bool readme; // readme.md t/f
-}GimbapConfig;
+#define Enter 10
 
 const char* lang_name[] = {"empty", "rust", "go", "python", "npm"};
 const char* license_name[] = {"None", "MIT License", "Apache License 2.0", "GPL v3"};
@@ -27,9 +23,10 @@ void set_license(WINDOW *win, GimbapConfig *config);
 void set_readme(WINDOW *win, GimbapConfig *config);
 void print_summary(GimbapConfig *config);
 
-int main() {
+
+
+void tui_run(GimbapConfig *config) {
     setlocale(LC_ALL, ""); 
-    GimbapConfig config = {"", 0, false, 0, false};
 
     initscr();
     cbreak();
@@ -43,16 +40,15 @@ int main() {
     keypad(win, TRUE);
 
     draw_logo(win);
-    get_name(win, &config);
-    select_lang(win, &config);
-    set_options(win, &config);
-    set_license(win, &config);
-    set_readme(win, &config);
+    get_name(win, config);
+    select_lang(win, config);
+    set_options(win, config);
+    set_license(win, config);
+    set_readme(win, config);
 
     endwin();
 
-    print_summary(&config);
-    return 0;
+    print_summary(config);
 }
 
 void draw_logo(WINDOW *win){
@@ -70,7 +66,7 @@ void draw_logo(WINDOW *win){
     wgetch(win);
 }
 
-//step1: enter the project name
+// step1: enter the project name
 void get_name(WINDOW *win, GimbapConfig *config) {
     if (strlen(config->name) > 0) return; // if name is already set, skip input
 
@@ -89,7 +85,7 @@ void get_name(WINDOW *win, GimbapConfig *config) {
     noecho();
 }
 
-//step2: select the programming language
+// step2: select the programming language
 void select_lang(WINDOW *win, GimbapConfig *config) {
     if (config->lang != 0) return; // if language is already selected, skip input
 
@@ -109,7 +105,7 @@ void select_lang(WINDOW *win, GimbapConfig *config) {
         for (int i = 0; i < n_langs; i++) {
             if (i == choice) {
                 wattron(win, A_REVERSE);
-                mvwprintw(win, 4 + i, 4, " > [ ] %-10s ", lang_name[i]);
+                mvwprintw(win, 4 + i, 4, " > [*] %-10s ", lang_name[i]);
                 wattroff(win, A_REVERSE);
             } else {
                 mvwprintw(win, 4 + i, 4, "   [ ] %-10s ", lang_name[i]);
@@ -128,7 +124,7 @@ void select_lang(WINDOW *win, GimbapConfig *config) {
             case KEY_DOWN:
                 choice = (choice + 1) % n_langs;
                 break;
-            case 10:
+            case Enter:
                 config->lang = choice;
                 return;
             case 'q':
@@ -137,7 +133,7 @@ void select_lang(WINDOW *win, GimbapConfig *config) {
     }
 }
 
-//step3: remote repository setting
+// step3: remote repository setting
 void set_options(WINDOW *win, GimbapConfig *config) {
     if (config->remote) return;
 
@@ -154,13 +150,13 @@ void set_options(WINDOW *win, GimbapConfig *config) {
         mvwprintw(win, 3, 4, "a remote repository on GitHub?");
         if (choice == 1) {
                 wattron(win, A_REVERSE);
-                mvwprintw(win, 6, 6, " (*) Yes, Create or Connect Remote Repository ");
+                mvwprintw(win, 6, 6, " [*] Yes, Create or Connect Remote Repository ");
                 wattroff(win, A_REVERSE);
-                mvwprintw(win, 7, 6, " ( ) No, Local only ");
+                mvwprintw(win, 7, 6, " [ ] No, Local only ");
             } else {
-                mvwprintw(win, 6, 6, " ( ) Yes, Create or Connect Remote Repository ");
+                mvwprintw(win, 6, 6, " [ ] Yes, Create or Connect Remote Repository ");
                 wattron(win, A_REVERSE);
-                mvwprintw(win, 7, 6, " (*) No, Local only ");
+                mvwprintw(win, 7, 6, " [*] No, Local only ");
                 wattroff(win, A_REVERSE);
             }
             mvwhline(win, 11, 1, ACS_HLINE, width - 2);
@@ -173,7 +169,7 @@ void set_options(WINDOW *win, GimbapConfig *config) {
                 case KEY_DOWN:
                     choice = !choice;
                     break;
-                case 10:
+                case Enter:
                     config->remote = (choice == 1);
                     return;
                 case 'q':
@@ -182,7 +178,7 @@ void set_options(WINDOW *win, GimbapConfig *config) {
     }
 }
 
-//step4: select the license
+// step4: select the license
 void set_license(WINDOW *win, GimbapConfig *config) {
     if (config->license != 0) return; // if license is already selected, skip input
 
@@ -200,7 +196,7 @@ void set_license(WINDOW *win, GimbapConfig *config) {
         for (int i = 0; i < n_licenses; i++) {
             if (i == choice) {
                 wattron(win, A_REVERSE);
-                mvwprintw(win, 4 + i, 4, " > [ ] %-20s ", license_name[i]);
+                mvwprintw(win, 4 + i, 4, " > [*] %-20s ", license_name[i]);
                 wattroff(win, A_REVERSE);
             } else {
                 mvwprintw(win, 4 + i, 4, "   [ ] %-20s ", license_name[i]);
@@ -218,7 +214,7 @@ void set_license(WINDOW *win, GimbapConfig *config) {
             case KEY_DOWN:
                 choice = (choice + 1) % n_licenses;
                 break;
-            case 10:
+            case Enter:
                 config->license = choice + 1; // (1: None, 2: MIT, ...)
                 return;
             case 'q':
@@ -245,13 +241,13 @@ void set_readme(WINDOW *win, GimbapConfig *config) {
 
         if (choice == 0) {
             wattron(win, A_REVERSE);
-            mvwprintw(win, 5, 6, " > [X] Yes, create a template ");
+            mvwprintw(win, 5, 6, " > [*] Yes, create a template ");
             wattroff(win, A_REVERSE);
             mvwprintw(win, 6, 6, "   [ ] No ");
         } else {
             mvwprintw(win, 5, 6, "   [ ] Yes, create a template ");
             wattron(win, A_REVERSE);
-            mvwprintw(win, 6, 6, " > [X] No ");
+            mvwprintw(win, 6, 6, " > [*] No ");
             wattroff(win, A_REVERSE);
         }
 
@@ -268,7 +264,7 @@ void set_readme(WINDOW *win, GimbapConfig *config) {
             case ' ':
                 choice = !choice;
                 break;
-            case 10:
+            case Enter:
                 config->readme = (choice == 0); 
                 return;
             case 'q':
