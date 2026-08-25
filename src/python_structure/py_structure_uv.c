@@ -8,6 +8,23 @@
 
 #define PATH_MAX 4096
 
+int is_valid_python_version(const char *version) {
+    // Whitelist of supported Python versions
+    const char *valid_versions[] = {
+        "3.8", "3.9", "3.10", "3.11", "3.12", "3.13", "3.14"
+    };
+    
+    // Automatically calculate the number of elements in the array
+    int num_versions = sizeof(valid_versions) / sizeof(valid_versions[0]);
+
+    for (int i = 0; i < num_versions; i++) {
+        if (strcmp(version, valid_versions[i]) == 0) {
+            return 1; // Valid version found!
+        }
+    }
+    return 0; // No match found in the whitelist
+}
+
 void setup_python_uv_project(GimbapConfig *config) {
     char original_dir[PATH_MAX];
 
@@ -43,15 +60,23 @@ void setup_python_uv_project(GimbapConfig *config) {
     // Matches: $ uv python pin any version -> Creates .python-version
     // select Python version to pin, defaulting to 3.12 if no input is provided
     char selected_version[10];
-    printf("\nEnter Python version to pin (e.g., 3.12, 3.14) [Default: 3.12]: ");
-    fflush(stdout);
+    while(1){
+        printf("\nEnter Python version to pin (e.g., 3.12, 3.14) [Default: 3.12]: ");
+        fflush(stdout);
 
-    if (fgets(selected_version, sizeof(selected_version), stdin) != NULL) {
-        selected_version[strcspn(selected_version, "\r\n")] = '\0';
-    }
+        if (fgets(selected_version, sizeof(selected_version), stdin) != NULL) {
+            selected_version[strcspn(selected_version, "\r\n")] = '\0';
+        }
 
-    if (strlen(selected_version) == 0) {
-        strcpy(selected_version, "3.12");
+        if (strlen(selected_version) == 0) {
+            strcpy(selected_version, "3.12");
+        }
+
+        if (is_valid_python_version(selected_version)) {
+            break;
+        } else {
+            printf("Invalid Python version. Please select from the following supported versions: 3.8, 3.9, 3.10, 3.11, 3.12, 3.13, 3.14\n");
+        }
     }
 
     char pin_command[50];
