@@ -1,2 +1,2 @@
 bin/gimbap
-obj/tui.o
+obj/*
