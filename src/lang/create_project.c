@@ -1,11 +1,13 @@
 #include "create_project.h"
 #include "py_structure_uv.h"
+#include "rs_structure_cargo.h"
 #include "config.h"
 
 void create_project(GimbapConfig *config) {
     switch (config->lang) {
         case 1: // Rust
             // Call the function to set up a Rust project
+            setup_rust_cargo_project(config);
             break;
         case 2: // Go
             // Call the function to set up a Go project
