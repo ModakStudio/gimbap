@@ -3,6 +3,7 @@
 #include "rs_structure_cargo.h"
 #include "c_structure.h"
 #include "go_structure.h"
+#include "npm_structure.h"
 #include "config.h"
 
 void create_project(GimbapConfig *config) {
@@ -24,6 +25,7 @@ void create_project(GimbapConfig *config) {
             break;
         case LANG_NPM: // NPM
             // Call the function to set up an NPM project
+            setup_npm_project(config);
             break;
         case LANG_C: // C
             // Call the function to set up a C project
